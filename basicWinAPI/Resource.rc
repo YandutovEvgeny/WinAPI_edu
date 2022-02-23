@@ -66,11 +66,59 @@ BEGIN
     BEGIN
         MENUITEM "E&xit",                       ID_FILE_EXIT
     END
-    POPUP "&Stuff"
+    POPUP "&Help"
     BEGIN
-        MENUITEM "&Go",                         ID_STUFF_GO
-        MENUITEM "Go &Somewhere else",          ID_STUFF_GOSOMEWHEREELSE
+        MENUITEM "&About",                      ID_HELP_ABOUT
     END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 275, 102
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "My About Box"
+FONT 8, "Microsoft Sans Serif", 400, 0, 0xCC
+BEGIN
+    GROUPBOX        "About this program...",IDC_STATIC,16,16,244,70
+    LTEXT           "An example program showing how to use",IDC_STATIC,32,29,136,10
+    LTEXT           "Dialog Boxes",IDC_STATIC,75,41,49,12
+    LTEXT           "by theForger",IDC_STATIC,76,63,43,13
+    PUSHBUTTON      "&OK",IDOK,192,30,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,193,51,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 268
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 95
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
 END
 
 #endif    // Russian (Russia) resources

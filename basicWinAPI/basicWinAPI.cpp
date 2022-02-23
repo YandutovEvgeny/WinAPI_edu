@@ -4,6 +4,7 @@
 CONST CHAR g_szCLASS_NAME[] = "The title of my window";
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -66,6 +67,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		MessageBox(hwnd, szFileName, "This program is:", MB_OK | MB_ICONINFORMATION);
 	}
 		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case ID_HELP_ABOUT:
+		{
+			int press = DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), hwnd, DlgProc);
+			if (press == IDOK)MessageBox(hwnd, "Dialog exited with IDOK.", "Notice", MB_OK | MB_ICONINFORMATION);
+			else if (press == IDCANCEL)MessageBox(hwnd, "Dialog exited with IDCANCEL.", "Notice", MB_OK | MB_ICONINFORMATION);
+			else if (press == -1)MessageBox(hwnd, "Dialog failed!", "Error", MB_OK | MB_ICONERROR);
+		}break;
+		case ID_FILE_EXIT: PostQuitMessage(0); break;
+		}
+		break;
 	case WM_CLOSE:
 		DestroyWindow(hwnd);
 		break;
@@ -75,4 +89,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	default: return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
 	return 0;
+}
+
+BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_INITDIALOG:
+		break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:EndDialog(hwnd, IDOK); break;
+		case IDCANCEL:EndDialog(hwnd, IDCANCEL); break;
+		}
+		break;
+	}
+	return FALSE;
 }
