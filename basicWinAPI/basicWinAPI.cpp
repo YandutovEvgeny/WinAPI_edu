@@ -1,6 +1,11 @@
 #include<Windows.h>
 #include "resource.h"
 
+#define ID_FILE_EXIT		9001
+#define ID_STUFF_GO			9002
+#define ID_TASKS_FIRST		9003
+#define ID_TASKS_SECOND		9004
+
 CONST CHAR g_szCLASS_NAME[] = "The title of my window";
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -14,13 +19,13 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, in
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	//wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
-	wc.hIconSm = (HICON)LoadImage(hInstance, "Coding.ico", IMAGE_ICON, 0,0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
+	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(NULL, IDI_APPLICATION);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wc.lpszClassName = g_szCLASS_NAME;
-	wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
+	wc.lpszMenuName = NULL;
 
 	if (!RegisterClassEx(&wc))
 	{
@@ -57,14 +62,43 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
-	case WM_LBUTTONDOWN:
+	case WM_CREATE:
 	{
-		CHAR szFileName[MAX_PATH];
-		HINSTANCE hInstance = GetModuleHandle(NULL);
+		HMENU hMenu, hSubMenu; 
+		HICON hIcon, hIconSm;
+		
+		hMenu = CreateMenu();
 
-		GetModuleFileName(hInstance, szFileName, MAX_PATH);
-		MessageBox(hwnd, szFileName, "This program is:", MB_OK | MB_ICONINFORMATION);
+		hSubMenu = CreatePopupMenu();
+		AppendMenu(hSubMenu, MF_STRING, ID_FILE_EXIT, "E&xit");
+		AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, "&File");
+
+		hSubMenu = CreatePopupMenu();
+		AppendMenu(hSubMenu, MF_STRING, ID_STUFF_GO, "&Go");
+		AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, "&Stuff");
+
+		hSubMenu = CreatePopupMenu();
+		AppendMenu(hSubMenu, MF_STRING | MF_CHECKED, ID_TASKS_FIRST, "&First");
+		AppendMenu(hSubMenu, MF_STRING | MF_GRAYED, ID_TASKS_SECOND, "&Second");
+		AppendMenu(hMenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, "&Tasks");
+
+		SetMenu(hwnd, hMenu);
+		
+		hIcon = (HICON)LoadImage(NULL, "Coding.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+		if (hIcon)SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		else MessageBox(hwnd, "Could not load large icon!", "Error", MB_OK | MB_ICONERROR);
+
+		hIconSm = (HICON)LoadImage(NULL, "Coding.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+		if (hIconSm)SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSm);
+		else MessageBox(hwnd, "Could not load small icon!", "Error", MB_OK | MB_ICONERROR);
 	}
+	break;
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case ID_FILE_EXIT: PostQuitMessage(0); break;
+		case ID_STUFF_GO: MessageBox(hwnd, "Dont touch me now!", "Critical Error", MB_OK | MB_TOPMOST | MB_ICONERROR); break;
+		}
 		break;
 	case WM_CLOSE:
 		DestroyWindow(hwnd);
