@@ -1,10 +1,19 @@
+#pragma comment lib comctl32
 #include<Windows.h>
+#include<CommCtrl.h>
 
 #define IDC_MAIN_EDIT		101
+#define IDC_MAIN_TOOL		1001
+#define ID_FILE_NEW			1002
+#define ID_FILE_OPEN		1003
+#define ID_FILE_SAVE		1004
+#define IDC_MAIN_STATUS		2001
 
 CONST CHAR g_szCLASS_NAME[] = "theForgers Tutorial Application";
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL LoadTextFileToEdit(HWND hEdit, LPCTSTR pszFileName);
+BOOL SaveTextFileFromEdit(HWND hEdit, LPCTSTR pszFileName);
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -50,6 +59,25 @@ INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR lpCmdLine, in
 		DispatchMessage(&msg);
 	}
 
+	OPENFILENAME ofn;
+	CHAR szFileName[MAX_PATH] = "";
+
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0All Files(*.*)\0*.*\0";
+	ofn.lpstrFile = szFileName;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.lpstrDefExt = "txt";
+
+	if (GetOpenFileName(&ofn))
+	{
+		SaveTextFileFromEdit(hwnd, szFileName);		//?
+		LoadTextFileToEdit(hwnd, szFileName);		//?
+	}
+
 	return 0;
 }
 
@@ -59,6 +87,55 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 	{
+		//Statusbar
+		HWND hStatus;
+		hStatus = CreateWindowEx
+		(
+			NULL, STATUSCLASSNAME, NULL, WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP,
+			0, 0, 0, 0, hwnd, (HMENU)IDC_MAIN_STATUS, DrvGetModuleHandle(NULL),
+			NULL
+		);
+
+		int statwidths[] = { 100, -1 };
+		SendMessage(hStatus, SB_SETPARTS, sizeof(statwidths) / sizeof(int), (LPARAM)statwidths);
+		SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"ѕривет :)");
+
+		//Toolbar
+		HWND hTool;
+		hTool = CreateWindowEx
+		(
+			NULL, TOOLBARCLASSNAME, NULL, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0,
+			hwnd, (HMENU)IDC_MAIN_TOOL, GetModuleHandle(NULL), NULL
+		);
+		//Ёто сообщение необходимо дл€ того, чтобы система могла определить, какую версию библиотеки common controls вы используете
+		SendMessage(hTool, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+
+		TBBUTTON tbb[3];	//tbb - tool bar button
+		TBADDBITMAP tbab;	//tbab - tool bar add bitmap
+
+		tbab.hInst = HINST_COMMCTRL;
+		tbab.nID = IDB_STD_SMALL_COLOR;
+		SendMessage(hTool, TB_ADDBITMAP, 0, (LPARAM)&tbab);
+
+		ZeroMemory(tbb, sizeof(tbb));
+		tbb[0].iBitmap = STD_FILENEW;
+		tbb[0].fsState = TBSTATE_ENABLED;
+		tbb[0].fsStyle = TBSTYLE_BUTTON;
+		tbb[0].idCommand = ID_FILE_NEW;
+
+		tbb[1].iBitmap = STD_FILEOPEN;
+		tbb[1].fsState = TBSTATE_ENABLED;
+		tbb[1].fsStyle = TBSTYLE_BUTTON;
+		tbb[1].idCommand = ID_FILE_OPEN;
+
+		tbb[2].iBitmap = STD_FILESAVE;
+		tbb[2].fsState = TBSTATE_ENABLED;
+		tbb[2].fsStyle = TBSTYLE_BUTTON;
+		tbb[2].idCommand = ID_FILE_SAVE;
+
+		SendMessage(hTool, TB_ADDBUTTONS, sizeof(tbb) / sizeof(TBBUTTON), (LPARAM)&tbb);
+		
+		//Edit
 		HFONT hfDefault;
 		HWND hEdit;
 
@@ -76,10 +153,36 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_SIZE:
 	{
+		HWND hTool;
+		RECT rcTool;
+		int iToolHeight;	//¬ысота панели инструментов
+
+		HWND hStatus;
+		RECT rcStatus;
+		int iStatusHeight;
+
 		HWND hEdit;
 		RECT rcClient;
+		int iEditHeight;
 
+		//–азмер панели инструментов и получаем высоту
+		hTool = GetDlgItem(hwnd, IDC_MAIN_TOOL);
+		SendMessage(hTool, TB_AUTOSIZE, 0, 0);
+
+		GetWindowRect(hTool, &rcTool);
+		iToolHeight = rcTool.bottom - rcTool.top;
+
+		//–азмер строки состо€ни€ и получаем высоту
+		hStatus = GetDlgItem(hwnd, IDC_MAIN_STATUS);
+		SendMessage(hStatus, WM_SIZE, 0, 0);
+			
+		GetWindowRect(hStatus, &rcStatus);
+		iStatusHeight = rcStatus.bottom - rcStatus.top;
+
+		//–асчитываем оставшуюс€ высоту
 		GetClientRect(hwnd, &rcClient);	  //ѕолучаем размер клиентской области
+
+		iEditHeight = rcClient.bottom - iToolHeight - iStatusHeight;
 
 		hEdit = GetDlgItem(hwnd, IDC_MAIN_EDIT);	//ѕолучаем дескриптор Edit-окна
 		SetWindowPos(hEdit, NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_NOZORDER);		//”станавливаем размер Edit-окна
@@ -94,4 +197,75 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	default: return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	}
 	return 0;
+}
+
+BOOL LoadTextFileToEdit(HWND hEdit, LPCTSTR pszFileName)
+{
+	HANDLE HFile;
+	BOOL bSuccess = FALSE;
+
+	HFile = CreateFile(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL,
+		OPEN_EXISTING, 0, NULL);
+	if (HFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD dwFileSize;
+
+		dwFileSize = GetFileSize(HFile, NULL);
+		if (dwFileSize != 0xFFFFFFFF)
+		{
+			LPSTR pszFileText;
+
+			pszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
+			if (pszFileText != NULL)
+			{
+				DWORD dwRead;
+
+				if (ReadFile(HFile, pszFileText, dwFileSize, &dwRead, NULL))
+				{
+					pszFileText[dwFileSize] = 0; // ƒобавить нулевой терминатор
+					if (SetWindowText(hEdit, pszFileText))
+						bSuccess = TRUE; // Ёто сработало!
+				}
+				GlobalFree(pszFileText);
+			}
+		}
+		CloseHandle(HFile);
+	}
+	return bSuccess;
+}
+
+BOOL SaveTextFileFromEdit(HWND hEdit, LPCTSTR pszFileName)
+{
+	HANDLE HFile;
+	BOOL bSuccess = FALSE;
+
+	HFile = CreateFile(pszFileName, GENERIC_WRITE, 0, NULL,
+		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (HFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD dwTextLength;
+
+		dwTextLength = GetWindowTextLength(hEdit);
+		// Ќе нужно беспокоитьс€, если нет текста.
+		if (dwTextLength > 0)
+		{
+			LPSTR pszText;
+			DWORD dwBufferSize = dwTextLength + 1;
+
+			pszText = (LPSTR)GlobalAlloc(GPTR, dwBufferSize);
+			if (pszText != NULL)
+			{
+				if (GetWindowText(hEdit, pszText, dwBufferSize))
+				{
+					DWORD dwWritten;
+
+					if (WriteFile(HFile, pszText, dwTextLength, &dwWritten, NULL))
+						bSuccess = TRUE;
+				}
+				GlobalFree(pszText);
+			}
+		}
+		CloseHandle(HFile);
+	}
+	return bSuccess;
 }
